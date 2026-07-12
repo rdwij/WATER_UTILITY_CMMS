@@ -58,3 +58,19 @@ test('password can be reset with valid token', function () {
         return true;
     });
 });
+
+test('forgot password requests are rate limited', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    for ($attempt = 1; $attempt <= 7; $attempt++) {
+        $response = $this->post('/forgot-password', ['email' => $user->email]);
+
+        if ($attempt <= 6) {
+            $response->assertStatus(302);
+        } else {
+            $response->assertStatus(429);
+        }
+    }
+});
