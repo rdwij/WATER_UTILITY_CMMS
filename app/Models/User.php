@@ -70,6 +70,68 @@ class User extends Authenticatable
     }
 
     /**
+     * The roles that belong to the user.
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'role_user');
+    }
+
+    /**
+     * Check if the user has a specific role.
+     */
+    public function hasRole(string $role): bool
+    {
+        return !! $this->roles()->where('name', $role)->exists();
+    }
+
+    /**
+     * Check if the user has any of the given roles.
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        return !! $this->roles()->whereIn('name', $roles)->exists();
+    }
+
+    /**
+     * Check if the user has all of the given roles.
+     */
+    public function hasAllRole(array $roles): bool
+    {
+        return $this->roles()->whereIn('name', $roles)->count() === count($roles);
+    }
+
+    /**
+     * Check if the user has a specific permission.
+     */
+    public function hasPermission(string $permission): bool
+    {
+        return $this->roles()->whereHas('permissions', function($q) use ($permission) {
+            $q->where('name', $permission);
+        })->exists();
+    }
+
+    /**
+     * Check if the user has any of the given permissions.
+     */
+    public function hasAnyPermission(array $permissions): bool
+    {
+        return $this->roles()->whereHas('permissions', function($q) use ($permissions) {
+            $q->whereIn('name', $permissions);
+        })->exists();
+    }
+
+    /**
+     * Check if the user has all of the given permissions.
+     */
+    public function hasAllPermission(array $permissions): bool
+    {
+        return $this->roles()->whereHas('permissions', function($q) use ($permissions) {
+            $q->whereIn('name', $permissions);
+        })->count() === count($permissions);
+    }
+
+    /**
      * Get the avatar URL for display while storing the path in the database.
      */
     protected function avatar(): Attribute

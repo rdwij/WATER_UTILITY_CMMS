@@ -5,6 +5,7 @@ namespace App\Providers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -24,6 +25,19 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->registerPolicies();
+    }
+
+    /**
+     * Register application policies.
+     */
+    protected function registerPolicies(): void
+    {
+        // Register policies using the Gate facade for explicit policy mapping
+        Gate::policy(User::class, \App\Policies\UserPolicy::class);
+        Gate::policy(Employee::class, \App\Policies\EmployeePolicy::class);
+        Gate::policy(Role::class, \App\Policies\RolePolicy::class);
+        Gate::policy(Permission::class, \App\Policies\PermissionPolicy::class);
     }
 
     /**
