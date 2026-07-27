@@ -69,7 +69,10 @@ class EmployeeController extends Controller
     {
         return inertia('employees/create', [
             'users' => User::doesntHave('employee')->get(['id', 'name', 'email']),
-            'supervisors' => Employee::with('user')->whereNotNull('termination_date')->get(['id', 'first_name', 'last_name']),
+            'supervisors' => Employee::with('user')
+                ->whereNull('termination_date')
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name', 'employee_id']),
         ]);
     }
 
@@ -124,9 +127,10 @@ class EmployeeController extends Controller
                 ->orWhereDoesntHave('employee')
                 ->get(['id', 'name', 'email']),
             'supervisors' => Employee::with('user')
-                ->whereNotNull('termination_date')
+                ->whereNull('termination_date')
                 ->where('id', '!=', $employee->id)
-                ->get(['id', 'first_name', 'last_name']),
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name', 'employee_id']),
         ]);
     }
 

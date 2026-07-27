@@ -56,7 +56,7 @@ class UserController extends Controller
     public function create()
     {
         return inertia('users/create', [
-            'roles' => \App\Models\Role::pluck('name', 'name'),
+            'roles' => \App\Models\Role::orderBy('name')->get(['id', 'name', 'display_name']),
         ]);
     }
 
@@ -112,7 +112,7 @@ class UserController extends Controller
     {
         return inertia('users/edit', [
             'user' => $user->load('roles'),
-            'roles' => \App\Models\Role::pluck('name', 'name'),
+            'roles' => \App\Models\Role::orderBy('name')->get(['id', 'name', 'display_name']),
         ]);
     }
 

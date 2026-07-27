@@ -53,7 +53,14 @@ class PermissionController extends Controller
      */
     public function create()
     {
-        return inertia('permissions/create');
+        return inertia('permissions/create', [
+            'suggested_groups' => Permission::query()
+                ->whereNotNull('group')
+                ->distinct()
+                ->orderBy('group')
+                ->pluck('group')
+                ->all(),
+        ]);
     }
 
     /**
@@ -86,6 +93,13 @@ class PermissionController extends Controller
     {
         return inertia('permissions/edit', [
             'permission' => $permission,
+            'suggested_groups' => Permission::query()
+                ->whereNotNull('group')
+                ->where('id', '!=', $permission->id)
+                ->distinct()
+                ->orderBy('group')
+                ->pluck('group')
+                ->all(),
         ]);
     }
 

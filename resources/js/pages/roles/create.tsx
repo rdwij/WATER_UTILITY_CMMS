@@ -1,213 +1,211 @@
-import { Head } from '@inertiajs/react';
-import {
-  Button,
-  Checkbox,
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Separator,
-  Textarea,
-} from '@/components/ui';
-import { useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Save, ShieldCheck } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
-export default function RolesCreate() {
-  const { data, post, processing, errors, reset } = useForm({
-    name: '',
-    display_name: '',
-    description: '',
-  });
+type Permission = {
+    id: number;
+    name: string;
+    display_name: string;
+    group: string;
+    is_active: boolean;
+};
 
-  const { data: permissions } = usePage().props;
+type Props = {
+    // Eloquent Collection keyed by group string.
+    permissions: Record<string, Permission[]>;
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('roles.store'), {
-      onError: () => {
-        // Form errors will be handled by Inertia
-      },
-      onSuccess: () => {
-        reset();
-      },
+function toggleId(list: number[], id: number, on: boolean): number[] {
+    if (on) {
+        return list.includes(id) ? list : [...list, id];
+    }
+    return list.filter((x) => x !== id);
+}
+
+export default function RolesCreate({ permissions = {} }: Props) {
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        display_name: '',
+        description: '',
+        permissions: [] as number[],
     });
-  };
 
-  return (
-    <>
-      <Head title="Create Role" />
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Create Role</h1>
-          <p className="text-muted-foreground">
-            Create a new role with specific permissions
-          </p>
-        </div>
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('roles.store'));
+    };
 
-        <Form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
-            <Separator className="mb-4" />
+    const groups = Object.keys(permissions);
 
-            <FormField
-              control={form}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g., water_technician"
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormMessage>{field.error}</FormMessage>
-                </FormItem>
-              )}
-            />
+    return (
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Roles', href: route('roles.index') },
+                { title: 'New Role', href: route('roles.create') },
+            ]}
+        >
+            <Head title="New Role" />
+            <div className="space-y-6 p-6">
+                <header>
+                    <Button asChild variant="ghost" size="sm">
+                        <Link href={route('roles.index')}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to roles
+                        </Link>
+                    </Button>
+                    <h1 className="mt-2 flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                        <ShieldCheck className="h-6 w-6" />
+                        New Role
+                    </h1>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Create a new role and grant it permissions.
+                    </p>
+                </header>
 
-            <FormField
-              control={form}
-              name="display_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Display Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g., Water Technician"
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormMessage>{field.error}</FormMessage>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Describe the role responsibilities"
-                      className="w-full h-24"
-                    />
-                  </FormControl>
-                  <FormMessage>{field.error}</FormMessage>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Permissions */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Permissions</h2>
-            <Separator className="mb-4" />
-
-            {permissions?.grouped && Object.keys(permissions.grouped).map((group) => (
-              <div key={group} className="mb-6">
-                <h3 className="text-lg font-medium mb-4">{group}</h3>
-                <div className="space-y-2">
-                  {permissions.grouped[group].map((permission: any) => (
-                    <FormField
-                      key={permission.id}
-                      control={form}
-                      name="permissions"
-                      value={permission.id}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value.includes(permission.id)}
-                              onValueChange={(value) => {
-                                const current = field.value || [];
-                                const index = current.indexOf(permission.id);
-                                if (value && index === -1) {
-                                  field.onValueChange([...current, permission.id]);
-                                } else if (!value && index !== -1) {
-                                  field.onValueChange(
-                                    current.filter((id: number) => id !== permission.id)
-                                  );
+                <form
+                    onSubmit={submit}
+                    className="space-y-6 rounded-lg border bg-card p-6"
+                >
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="name">Name</Label>
+                            <Input
+                                id="name"
+                                type="text"
+                                value={data.name}
+                                onChange={(e) =>
+                                    setData('name', e.target.value)
                                 }
-                              }}
-                              className="checkbox checkbox-primary"
+                                placeholder="water_technician"
+                                aria-invalid={!!errors.name}
+                                required
                             />
-                            <span className="ml-2">{permission.display_name}</span>
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+                            {errors.name && (
+                                <p className="text-sm text-destructive">
+                                    {errors.name}
+                                </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                                Lowercase, snake_case identifier.
+                            </p>
+                        </div>
 
-            {/* Fallback if grouped permissions not available */}
-            {!permissions?.grouped && permissions && permissions.length > 0 && (
-              <div className="space-y-2">
-                {permissions.map((permission: any) => (
-                  <FormField
-                    key={permission.id}
-                    control={form}
-                    name="permissions"
-                    value={permission.id}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value.includes(permission.id)}
-                            onValueChange={(value) => {
-                              const current = field.value || [];
-                              const index = current.indexOf(permission.id);
-                              if (value && index === -1) {
-                                field.onValueChange([...current, permission.id]);
-                              } else if (!value && index !== -1) {
-                                field.onValueChange(
-                                  current.filter((id: number) => id !== permission.id)
-                                );
-                              }
-                            }}
-                            className="checkbox checkbox-primary"
-                          />
-                          <span className="ml-2">{permission.display_name}</span>
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                ))}
-              </div>
-            )}
+                        <div className="space-y-1.5">
+                            <Label htmlFor="display_name">Display name</Label>
+                            <Input
+                                id="display_name"
+                                type="text"
+                                value={data.display_name}
+                                onChange={(e) =>
+                                    setData('display_name', e.target.value)
+                                }
+                                placeholder="Water Technician"
+                                aria-invalid={!!errors.display_name}
+                                required
+                            />
+                            {errors.display_name && (
+                                <p className="text-sm text-destructive">
+                                    {errors.display_name}
+                                </p>
+                            )}
+                        </div>
+                    </div>
 
-            {/* No permissions available */}
-            {!permissions || permissions.length === 0 && (
-              <p className="text-muted-foreground">No permissions available to assign.</p>
-            )}
-          </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                            id="description"
+                            value={data.description}
+                            onChange={(e) =>
+                                setData('description', e.target.value)
+                            }
+                            rows={3}
+                        />
+                        {errors.description && (
+                            <p className="text-sm text-destructive">
+                                {errors.description}
+                            </p>
+                        )}
+                    </div>
 
-          <div className="flex justify-end pt-4 space-x-3">
-            <Button type="button" onClick={() => reset()} variant="outline">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={processing}>
-              Create Role
-            </Button>
-          </div>
-        </Form>
-      </div>
-    </>
-  );
+                    <div>
+                        <Label className="text-base">Permissions</Label>
+                        <p className="text-xs text-muted-foreground">
+                            Check the permissions this role should have.
+                        </p>
+                        <div className="mt-4 space-y-6">
+                            {groups.length === 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    No active permissions exist yet.
+                                </p>
+                            )}
+                            {groups.map((group) => (
+                                <fieldset
+                                    key={group}
+                                    className="rounded-md border bg-muted/30 p-4"
+                                >
+                                    <legend className="px-2 text-sm font-medium capitalize">
+                                        {group}
+                                    </legend>
+                                    <div className="grid gap-2 md:grid-cols-2">
+                                        {permissions[group].map((p) => {
+                                            const checked = data.permissions.includes(
+                                                p.id,
+                                            );
+                                            return (
+                                                <label
+                                                    key={p.id}
+                                                    className="flex items-start gap-2 rounded p-1 text-sm hover:bg-muted/50"
+                                                >
+                                                    <Checkbox
+                                                        checked={checked}
+                                                        onCheckedChange={(
+                                                            value,
+                                                        ) =>
+                                                            setData(
+                                                                'permissions',
+                                                                toggleId(
+                                                                    data.permissions,
+                                                                    p.id,
+                                                                    !!value,
+                                                                ),
+                                                            )
+                                                        }
+                                                        className="mt-0.5"
+                                                    />
+                                                    <span className="flex-1">
+                                                        <span className="font-medium">
+                                                            {p.display_name}
+                                                        </span>
+                                                        <span className="ml-2 font-mono text-xs text-muted-foreground">
+                                                            {p.name}
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </fieldset>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button asChild variant="outline">
+                            <Link href={route('roles.index')}>Cancel</Link>
+                        </Button>
+                        <Button type="submit" disabled={processing}>
+                            <Save className="mr-2 h-4 w-4" />
+                            Create Role
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </AppLayout>
+    );
 }

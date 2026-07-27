@@ -1,239 +1,376 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, Pencil, Trash2, User as UserIcon } from 'lucide-react';
+import { useState } from 'react';
+import AppLayout from '@/layouts/app-layout';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  Separator,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui';
-import { HiOutlineUserGroup, Icon } from '@heroicons/react/24/solid';
-import { Link } from '@inertiajs/react';
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
-export default function UsersShow() {
-  const { data: user } = usePage().props;
+type Role = { id: number; name: string; display_name: string };
 
-  return (
-    <>
-      <Head title={`User: ${user.name}`} />
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{user.name}</h1>
-          <p className="text-muted-foreground mt-2">
-            Email: {user.email}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-4">
-            <Link
-              href={route('users.edit', user.id)}
-              className="btn btn-sm btn-outline"
-            >
-              Edit User
-            </Link>
-            <Button
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `Are you sure you want to delete ${user.name}?`
-                  )
-                ) {
-                  window.location.href = route('users.destroy', user.id);
-                }
-              }}
-              variant="destructive"
-              size="sm"
-            >
-              Delete User
-            </Button>
-          </div>
-        </div>
+type Subordinate = {
+    id: number;
+    first_name: string;
+    last_name: string;
+    employee_id: string;
+    position_title?: string;
+    department?: string;
+    user?: { id: number; name: string; email: string };
+};
 
-        <div className="space-y-6">
-          {/* User Overview */}
-          <Card>
-            <CardHeader className="pb-4">
-              <h2 className="text-lg font-semibold">User Overview</h2>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Account Information
-                  </h3>
-                  <p className="mt-1">
-                    <Badge
-                      variant={user.email_verified_at ? 'default' : 'secondary'}
-                    >
-                      {user.email_verified_at ? 'Verified' : 'Unverified'}
-                    </Badge>
-                  </p>
-                  <p className="mt-1">Member since: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</p>
-                </div>
+type Employee = {
+    id: number;
+    employee_id: string;
+    position_title?: string;
+    department?: string;
+    employment_status?: string;
+    hire_date?: string | null;
+    termination_date?: string | null;
+    phone_number?: string | null;
+    emergency_contact?: string | null;
+    emergency_phone?: string | null;
+    subordinates?: Subordinate[];
+};
 
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Contact Information
-                  </h3>
-                  <p className="mt-1">{user.phone_number || 'Not provided'}</p>
-                </div>
+type User = {
+    id: number;
+    name: string;
+    email: string;
+    avatar?: string | null;
+    email_verified_at?: string | null;
+    phone_number?: string | null;
+    dashboard_notifications?: boolean;
+    email_notifications?: boolean;
+    sms_notifications?: boolean;
+    currency?: string;
+    created_at?: string;
+    roles: Role[];
+    employee?: Employee;
+};
 
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Notification Preferences
-                  </h3>
-                  <p className="mt-1">
-                    <Badge variant="secondary">
-                      Dashboard: {user.dashboard_notifications ? 'On' : 'Off'}
-                    </Badge>
-                  </p>
-                  <p className="mt-1">
-                    <Badge variant="secondary">
-                      Email: {user.email_notifications ? 'On' : 'Off'}
-                    </Badge>
-                  </p>
-                  <p className="mt-1">
-                    <Badge variant="secondary">
-                      SMS: {user.sms_notifications ? 'On' : 'Off'}
-                    </Badge>
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+type Props = { user: User };
 
-          {/* Roles */}
-          {user.roles && user.roles.length > 0 && (
-            <Card>
-              <CardHeader className="pb-4">
-                <h2 className="text-lg font-semibold">Assigned Roles ({user.roles.length})</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {user.roles.map((role: any) => (
-                    <span key={role.id} className="badge secondary">
-                      {role.display_name}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+function initials(name: string) {
+    return (
+        name
+            .split(' ')
+            .filter(Boolean)
+            .map((n) => n[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase() || '?'
+    );
+}
 
-          {/* Employee Information */}
-          {user.employee && (
-            <Card>
-              <CardHeader className="pb-4">
-                <h2 className="text-lg font-semibold">Employee Information</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        Employee Details
-                      </h3>
-                      <p className="mt-1">Employee ID: {user.employee.employee_id}</p>
-                      <p className="mt-1">Position: {user.employee.position_title}</p>
-                      <p className="mt-1">Department: {user.employee.department}</p>
-                      <p className="mt-1">
-                        Status:
-                        <Badge
-                          variant={user.employee.employment_status === 'active' ? 'default' : 'destructive'}
-                        >
-                          {user.employee.employment_status.charAt(0).toUpperCase() + user.employee.employment_status.slice(1).replace('_', ' ')}
-                        </Badge>
-                      </p>
+function statusLabel(s?: string) {
+    if (!s) return '';
+    const v = s.replace('_', ' ');
+    return v.charAt(0).toUpperCase() + v.slice(1);
+}
+
+function fmtDate(d?: string | null) {
+    if (!d) return 'N/A';
+    return new Date(d).toLocaleDateString();
+}
+
+export default function UsersShow({ user }: Props) {
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = () => {
+        if (
+            !window.confirm(
+                `Delete user ${user.name}? This will remove their employee record too.`,
+            )
+        ) {
+            return;
+        }
+        setDeleting(true);
+        router.delete(route('users.destroy', user.id), {
+            preserveScroll: true,
+            onFinish: () => setDeleting(false),
+        });
+    };
+
+    const subordinates = user.employee?.subordinates ?? [];
+
+    return (
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Users', href: route('users.index') },
+                { title: user.name, href: route('users.show', user.id) },
+            ]}
+        >
+            <Head title={`User: ${user.name}`} />
+            <div className="space-y-6 p-6">
+                <header>
+                    <Button asChild variant="ghost" size="sm">
+                        <Link href={route('users.index')}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to users
+                        </Link>
+                    </Button>
+                    <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <Avatar className="h-16 w-16">
+                                {user.avatar ? (
+                                    <AvatarImage
+                                        src={user.avatar}
+                                        alt={user.name}
+                                    />
+                                ) : null}
+                                <AvatarFallback>
+                                    {initials(user.name)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                                    <UserIcon className="h-6 w-6" />
+                                    {user.name}
+                                </h1>
+                                <p className="text-sm text-muted-foreground">
+                                    {user.email}
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <Badge
+                                        variant={
+                                            user.email_verified_at
+                                                ? 'default'
+                                                : 'secondary'
+                                        }
+                                    >
+                                        {user.email_verified_at
+                                            ? 'Verified'
+                                            : 'Unverified'}
+                                    </Badge>
+                                    {user.roles.map((r) => (
+                                        <Badge
+                                            key={r.id}
+                                            variant="outline"
+                                        >
+                                            {r.display_name}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={route('users.edit', user.id)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit
+                                </Link>
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={deleting}
+                                onClick={handleDelete}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </Button>
+                        </div>
                     </div>
+                </header>
 
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">
-                        Employment Dates
-                      </h3>
-                      <p className="mt-1">
-                        Hire Date: {user.employee.hire_date ? new Date(user.employee.hire_date).toLocaleDateString() : 'N/A'}
-                      </p>
-                      <p className="mt-1">
-                        Termination Date: {user.employee.termination_date ? new Date(user.employee.termination_date).toLocaleDateString() : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
+                <div className="grid gap-6 md:grid-cols-3">
+                    <section className="rounded-lg border bg-card p-6 md:col-span-1">
+                        <h2 className="text-lg font-semibold">Account</h2>
+                        <dl className="mt-4 space-y-3 text-sm">
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Phone
+                                </dt>
+                                <dd>
+                                    {user.phone_number || 'Not provided'}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Currency
+                                </dt>
+                                <dd>{user.currency ?? 'USD'}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Member since
+                                </dt>
+                                <dd>{fmtDate(user.created_at)}</dd>
+                            </div>
+                        </dl>
+                    </section>
 
-                  <div className="mt-4 pt-4 border-t">
-                    <h3 className="text-sm font-medium text-muted-foreground mb-2">Contact Information</h3>
-                    <p className="mb-1">Phone: {user.employee.phone_number || 'Not provided'}</p>
-                    <p className="mb-1">
-                      Emergency Contact: {user.employee.emergency_contact || 'Not provided'}
-                    </p>
-                    <p className="mb-1">
-                      Emergency Phone: {user.employee.emergency_phone || 'Not provided'}
-                    </p>
-                  </div>
+                    <section className="rounded-lg border bg-card p-6 md:col-span-2">
+                        <h2 className="text-lg font-semibold">
+                            Notification preferences
+                        </h2>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Badge variant="secondary">
+                                Dashboard:{' '}
+                                {user.dashboard_notifications ? 'On' : 'Off'}
+                            </Badge>
+                            <Badge variant="secondary">
+                                Email:{' '}
+                                {user.email_notifications ? 'On' : 'Off'}
+                            </Badge>
+                            <Badge variant="secondary">
+                                SMS:{' '}
+                                {user.sms_notifications ? 'On' : 'Off'}
+                            </Badge>
+                        </div>
+                    </section>
                 </div>
-              </CardContent>
-            </Card>
-          )}
 
-          {/* Subordinates (if user is a supervisor) */}
-          {user.employee?.subordinates && user.employee.subordinates.length > 0 && (
-            <Card>
-              <CardHeader className="pb-4">
-                <h2 className="text-lg font-semibold">
-                  Subordinates ({user.employee.subordinates.length})
-                </h2>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Employee ID</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {user.employee.subordinates.map((sub: any) => (
-                      <TableRow key={sub.id}>
-                        <TableCell>
-                          <Link href={route('users.show', sub.user.id)}>
-                            {sub.first_name} {sub.last_name}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{sub.employee_id}</TableCell>
-                        <TableCell>{sub.position_title}</TableCell>
-                        <TableCell>{sub.department}</TableCell>
-                        <TableCell>
-                          <Link
-                            href={route('users.show', sub.user.id)}
-                            className="btn btn-sm btn-outline"
-                          >
-                            View
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    </>
-  );
+                {user.employee && (
+                    <section className="rounded-lg border bg-card p-6">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-semibold">
+                                    Employee record
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Employee ID:{' '}
+                                    {user.employee.employee_id}
+                                </p>
+                            </div>
+                            <Button asChild variant="outline" size="sm">
+                                <Link
+                                    href={route(
+                                        'employees.show',
+                                        user.employee.id,
+                                    )}
+                                >
+                                    View employee
+                                </Link>
+                            </Button>
+                        </div>
+                        <dl className="mt-4 grid gap-4 text-sm md:grid-cols-3">
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Position
+                                </dt>
+                                <dd>
+                                    {user.employee.position_title ??
+                                        'Not set'}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Department
+                                </dt>
+                                <dd>
+                                    {user.employee.department ?? 'Not set'}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Status
+                                </dt>
+                                <dd>
+                                    <Badge
+                                        variant={
+                                            user.employee
+                                                .employment_status === 'active'
+                                                ? 'default'
+                                                : 'destructive'
+                                        }
+                                    >
+                                        {statusLabel(
+                                            user.employee.employment_status,
+                                        )}
+                                    </Badge>
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Hire date
+                                </dt>
+                                <dd>
+                                    {fmtDate(user.employee.hire_date)}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Termination date
+                                </dt>
+                                <dd>
+                                    {fmtDate(
+                                        user.employee.termination_date,
+                                    )}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Emergency contact
+                                </dt>
+                                <dd>
+                                    {user.employee.emergency_contact ||
+                                        'Not provided'}
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
+                )}
+
+                {subordinates.length > 0 && (
+                    <section className="rounded-lg border bg-card p-6">
+                        <h2 className="text-lg font-semibold">
+                            Direct reports ({subordinates.length})
+                        </h2>
+                        <Table className="mt-4">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Employee ID</TableHead>
+                                    <TableHead>Position</TableHead>
+                                    <TableHead className="w-24 text-right">
+                                        Action
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {subordinates.map((s) => (
+                                    <TableRow key={s.id}>
+                                        <TableCell className="font-medium">
+                                            {s.first_name} {s.last_name}
+                                        </TableCell>
+                                        <TableCell className="font-mono text-xs">
+                                            {s.employee_id}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                            {s.position_title ?? '—'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                asChild
+                                                size="sm"
+                                                variant="ghost"
+                                            >
+                                                <Link
+                                                    href={route(
+                                                        'employees.show',
+                                                        s.id,
+                                                    )}
+                                                >
+                                                    View
+                                                </Link>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </section>
+                )}
+            </div>
+        </AppLayout>
+    );
 }

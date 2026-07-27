@@ -1,344 +1,304 @@
-import { Head } from '@inertiajs/react';
-import {
-  Button,
-  Checkbox,
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Separator,
-} from '@/components/ui';
-import { useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Save, UserCog } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
-export default function UsersCreate() {
-  const { data, post, processing, errors, reset } = useForm({
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    avatar: null,
-    currency: 'USD',
-    dashboard_notifications: false,
-    email_notifications: false,
-    sms_notifications: false,
-    phone_number: '',
-    roles: [],
-  });
+type Role = { id: number; name: string; display_name: string };
 
-  const { data: roles } = usePage().props;
+type Props = {
+    roles: Role[];
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    post(route('users.store'), {
-      onError: () => {
-        // Form errors will be handled by Inertia
-      },
-      onSuccess: () => {
-        reset();
-      },
+function toggleId(list: number[], id: number, on: boolean): number[] {
+    if (on) return list.includes(id) ? list : [...list, id];
+    return list.filter((x) => x !== id);
+}
+
+export default function UsersCreate({ roles = [] }: Props) {
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+        currency: 'USD',
+        phone_number: '',
+        dashboard_notifications: false,
+        email_notifications: false,
+        sms_notifications: false,
+        roles: [] as number[],
     });
-  };
 
-  return (
-    <>
-      <Head title="Create User" />
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Create User</h1>
-          <p className="text-muted-foreground">
-            Add a new user to the system
-          </p>
-        </div>
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(route('users.store'));
+    };
 
-        <Form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
-            <Separator className="mb-4" />
+    return (
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Users', href: route('users.index') },
+                { title: 'New User', href: route('users.create') },
+            ]}
+        >
+            <Head title="New User" />
+            <div className="space-y-6 p-6">
+                <header>
+                    <Button asChild variant="ghost" size="sm">
+                        <Link href={route('users.index')}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to users
+                        </Link>
+                    </Button>
+                    <h1 className="mt-2 flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                        <UserCog className="h-6 w-6" />
+                        New User
+                    </h1>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Create a new system user.
+                    </p>
+                </header>
 
-            <FormField
-              control={form}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <input
-                      {...field}
-                      placeholder="John Doe"
-                      className="input input-bordered w-full"
-                      aria-invalid={!!errors.name}
-                    />
-                  </FormControl>
-                  {errors.name && (
-                    <p className="text-sm text-destructive">{errors.message}</p>
-                  )}
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <input
-                      type="email"
-                      {...field}
-                      placeholder="john@example.com"
-                      className="input input-bordered w-full"
-                      aria-invalid={!!errors.email}
-                    />
-                  </FormControl>
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.message}</p>
-                  )}
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Authentication */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Authentication</h2>
-            <Separator className="mb-4" />
-
-            <FormField
-              control={form}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <input
-                      type="password"
-                      {...field}
-                      placeholder="••••••••"
-                      className="input input-bordered w-full"
-                      aria-invalid={!!errors.password}
-                    />
-                  </FormControl>
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.message}</p>
-                  )}
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form}
-              name="password_confirmation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <input
-                      type="password"
-                      {...field}
-                      placeholder="••••••••"
-                      className="input input-bordered w-full"
-                      aria-invalid={!!errors.password_confirmation}
-                    />
-                  </FormControl>
-                  {errors.password_confirmation && (
-                    <p className="text-sm text-destructive">{errors.message}</p>
-                  )}
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Profile Information */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Profile Information</h2>
-            <Separator className="mb-4" />
-
-            <FormField
-              control={form}
-              name="avatar"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Avatar</FormLabel>
-                  <FormControl>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      {...field}
-                      className="file-input file-input-bordered w-full"
-                      aria-invalid={!!errors.avatar}
-                    />
-                  </FormControl>
-                  {errors.avatar && (
-                    <p className="text-sm text-destructive">{errors.message}</p>
-                  )}
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form}
-                name="currency"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Currency</FormLabel>
-                    <FormControl>
-                      <select
-                        {...field}
-                        className="select select-bordered w-full"
-                        aria-invalid={!!errors.currency}
-                      >
-                        <option value="USD">USD - US Dollar</option>
-                        <option value="EUR">EUR - Euro</option>
-                        <option value="GBP">GBP - British Pound</option>
-                        <option value="CAD">CAD - Canadian Dollar</option>
-                        <option value="AUD">AUD - Australian Dollar</option>
-                      </select>
-                    </FormControl>
-                    {errors.currency && (
-                      <p className="text-sm text-destructive">{errors.message}</p>
-                    )}
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form}
-                name="phone_number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <input
-                        type="tel"
-                        {...field}
-                        placeholder="+1 (555) 123-4567"
-                        className="input input-bordered w-full"
-                        aria-invalid={!!errors.phone_number}
-                      />
-                    </FormControl>
-                    {errors.phone_number && (
-                      <p className="text-sm text-destructive">{errors.message}</p>
-                    )}
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Notification Preferences */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Notification Preferences</h2>
-            <Separator className="mb-4" />
-
-            <FormField
-              control={form}
-              name="dashboard_notifications"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Dashboard Notifications</FormLabel>
-                  <FormControl>
-                    <Checkbox
-                      {...field}
-                      className="checkbox checkbox-primary"
-                    />
-                    <span className="ml-2">Enable dashboard notifications</span>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form}
-              name="email_notifications"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Notifications</FormLabel>
-                  <FormControl>
-                    <Checkbox
-                      {...field}
-                      className="checkbox checkbox-primary"
-                    />
-                    <span className="ml-2">Enable email notifications</span>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form}
-              name="sms_notifications"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SMS Notifications</FormLabel>
-                  <FormControl>
-                    <Checkbox
-                      {...field}
-                      className="checkbox checkbox-primary"
-                    />
-                    <span className="ml-2">Enable SMS notifications</span>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Role Assignment */}
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Role Assignment</h2>
-            <Separator className="mb-4" />
-
-            <FormField
-              control={form}
-              name="roles"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Roles</FormLabel>
-                  <FormControl>
-                    <div className="space-y-2">
-                      {roles.map((role: any) => (
-                        <div key={role.id} className="flex items-center">
-                          <Checkbox
-                            checked={field.value.includes(role.id)}
-                            onChange={(checked) => {
-                              const current = field.value || [];
-                              const index = current.indexOf(role.id);
-                              if (checked && index === -1) {
-                                field.onChange([...current, role.id]);
-                              } else if (!checked && index !== -1) {
-                                field.onChange(
-                                  current.filter((id: number) => id !== role.id)
-                                );
-                              }
-                            }}
-                            className="checkbox checkbox-primary"
-                          />
-                          <span className="ml-2">{role.display_name}</span>
+                <form
+                    onSubmit={submit}
+                    className="max-w-3xl space-y-6 rounded-lg border bg-card p-6"
+                >
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-semibold">
+                            Basic information
+                        </h2>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="name">Name</Label>
+                                <Input
+                                    id="name"
+                                    type="text"
+                                    value={data.name}
+                                    onChange={(e) =>
+                                        setData('name', e.target.value)
+                                    }
+                                    aria-invalid={!!errors.name}
+                                    required
+                                />
+                                {errors.name && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.name}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="email">Email</Label>
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    value={data.email}
+                                    onChange={(e) =>
+                                        setData('email', e.target.value)
+                                    }
+                                    aria-invalid={!!errors.email}
+                                    required
+                                />
+                                {errors.email && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.email}
+                                    </p>
+                                )}
+                            </div>
                         </div>
-                      ))}
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
+                    </section>
 
-          <div className="flex justify-end pt-4 space-x-3">
-            <Button type="button" onClick={() => reset()} variant="outline">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={processing}>
-              Create User
-            </Button>
-          </div>
-        </Form>
-      </div>
-    </>
-  );
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-semibold">Authentication</h2>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="password">Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    value={data.password}
+                                    onChange={(e) =>
+                                        setData('password', e.target.value)
+                                    }
+                                    aria-invalid={!!errors.password}
+                                    required
+                                />
+                                {errors.password && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.password}
+                                    </p>
+                                )}
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="password_confirmation">
+                                    Confirm password
+                                </Label>
+                                <Input
+                                    id="password_confirmation"
+                                    type="password"
+                                    value={data.password_confirmation}
+                                    onChange={(e) =>
+                                        setData(
+                                            'password_confirmation',
+                                            e.target.value,
+                                        )
+                                    }
+                                    aria-invalid={
+                                        !!errors.password_confirmation
+                                    }
+                                    required
+                                />
+                                {errors.password_confirmation && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.password_confirmation}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-semibold">Profile</h2>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="currency">Currency</Label>
+                                <select
+                                    id="currency"
+                                    value={data.currency}
+                                    onChange={(e) =>
+                                        setData('currency', e.target.value)
+                                    }
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                >
+                                    <option value="USD">USD - US Dollar</option>
+                                    <option value="EUR">EUR - Euro</option>
+                                    <option value="GBP">
+                                        GBP - British Pound
+                                    </option>
+                                    <option value="CAD">
+                                        CAD - Canadian Dollar
+                                    </option>
+                                    <option value="AUD">
+                                        AUD - Australian Dollar
+                                    </option>
+                                    <option value="LKR">
+                                        LKR - Sri Lankan Rupee
+                                    </option>
+                                </select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="phone_number">Phone</Label>
+                                <Input
+                                    id="phone_number"
+                                    type="tel"
+                                    value={data.phone_number}
+                                    onChange={(e) =>
+                                        setData('phone_number', e.target.value)
+                                    }
+                                    placeholder="+1 (555) 123-4567"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                            <Label className="text-sm">Notifications</Label>
+                            <div className="flex flex-col gap-2 text-sm">
+                                <label className="flex items-center gap-2">
+                                    <Checkbox
+                                        checked={
+                                            data.dashboard_notifications
+                                        }
+                                        onCheckedChange={(v) =>
+                                            setData(
+                                                'dashboard_notifications',
+                                                !!v,
+                                            )
+                                        }
+                                    />
+                                    Dashboard notifications
+                                </label>
+                                <label className="flex items-center gap-2">
+                                    <Checkbox
+                                        checked={data.email_notifications}
+                                        onCheckedChange={(v) =>
+                                            setData(
+                                                'email_notifications',
+                                                !!v,
+                                            )
+                                        }
+                                    />
+                                    Email notifications
+                                </label>
+                                <label className="flex items-center gap-2">
+                                    <Checkbox
+                                        checked={data.sms_notifications}
+                                        onCheckedChange={(v) =>
+                                            setData(
+                                                'sms_notifications',
+                                                !!v,
+                                            )
+                                        }
+                                    />
+                                    SMS notifications
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-semibold">
+                            Role assignment
+                        </h2>
+                        <div className="space-y-2 rounded-md border bg-muted/30 p-4">
+                            {roles.length === 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    No roles exist yet.
+                                </p>
+                            )}
+                            {roles.map((r) => {
+                                const checked = data.roles.includes(r.id);
+                                return (
+                                    <label
+                                        key={r.id}
+                                        className="flex items-center gap-2 text-sm"
+                                    >
+                                        <Checkbox
+                                            checked={checked}
+                                            onCheckedChange={(v) =>
+                                                setData(
+                                                    'roles',
+                                                    toggleId(
+                                                        data.roles,
+                                                        r.id,
+                                                        !!v,
+                                                    ),
+                                                )
+                                            }
+                                        />
+                                        <span>
+                                            {r.display_name}{' '}
+                                            <span className="font-mono text-xs text-muted-foreground">
+                                                ({r.name})
+                                            </span>
+                                        </span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </section>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button asChild variant="outline">
+                            <Link href={route('users.index')}>Cancel</Link>
+                        </Button>
+                        <Button type="submit" disabled={processing}>
+                            <Save className="mr-2 h-4 w-4" />
+                            Create User
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </AppLayout>
+    );
 }

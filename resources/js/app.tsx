@@ -5,8 +5,19 @@ import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
+import { route } from '@/lib/route';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+// Expose `route()` as a global so existing pages can call
+// `route('employees.show', id)` (Ziggy-style) without a per-page import.
+// Backed by Wayfinder in resources/js/lib/route.ts.
+declare global {
+    interface Window {
+        route: typeof route;
+    }
+}
+(globalThis as { route: typeof route }).route = route;
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

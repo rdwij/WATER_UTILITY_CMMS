@@ -1,163 +1,192 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, Key, Pencil, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import AppLayout from '@/layouts/app-layout';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  Separator,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui';
-import { HiOutlineUserGroup, Icon } from '@heroicons/react/24/solid';
-import { Link } from '@inertiajs/react';
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
-export default function PermissionsShow() {
-  const { data: permission } = usePage().props;
+type Permission = {
+    id: number;
+    name: string;
+    display_name: string;
+    description: string | null;
+    group: string;
+    is_active: boolean;
+};
 
-  return (
-    <>
-      <Head title={`Permission: ${permission.display_name}`} />
-      <div className="p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{permission.display_name}</h1>
-          <p className="text-muted-foreground mt-2">
-            Permission: {permission.name}
-          </p>
-          {permission.description && (
-            <p className="mt-2">{permission.description}</p>
-          )}
-          <div className="mt-4 flex flex-wrap gap-4">
-            <Link
-              href={route('permissions.edit', permission.id)}
-              className="btn btn-sm btn-outline"
-            >
-              Edit Permission
-            </Link>
-            <Button
-              onClick={() => {
-                if (
-                  window.confirm(
-                    `Are you sure you want to delete the ${permission.display_name} permission?`
-                  )
-                ) {
-                  window.location.href = route('permissions.destroy', permission.id);
-                }
-              }}
-              variant="destructive"
-              size="sm"
-            >
-              Delete Permission
-            </Button>
-          </div>
-        </div>
+type RoleRef = { id: number; name: string; display_name: string };
 
-        <div className="space-y-6">
-          {/* Permission Overview */}
-          <Card>
-            <CardHeader className="pb-4">
-              <h2 className="text-lg font-semibold">Permission Overview</h2>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Basic Information
-                  </h3>
-                  <p className="mt-1">
-                    <strong>Name:</strong> {permission.name}
-                  </p>
-                  <p className="mt-1">
-                    <strong>Display Name:</strong> {permission.display_name}
-                  </p>
-                  <p className="mt-1">
-                    <strong>Module/Group:</strong> {permission.group}
-                  </p>
-                  <p className="mt-1">
-                    <strong>Status:</strong>
-                    <Badge
-                      variant={permission.is_active ? 'default' : 'destructive'}
-                    >
-                      {permission.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </p>
+type Props = {
+    permission: Permission & { roles?: RoleRef[] };
+};
+
+export default function PermissionsShow({ permission }: Props) {
+    const roles = permission.roles ?? [];
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = () => {
+        if (
+            !window.confirm(
+                `Delete permission ${permission.display_name}? Roles with this permission will lose it.`,
+            )
+        ) {
+            return;
+        }
+        setDeleting(true);
+        router.delete(route('permissions.destroy', permission.id), {
+            preserveScroll: true,
+            onFinish: () => setDeleting(false),
+        });
+    };
+
+    return (
+        <AppLayout
+            breadcrumbs={[
+                { title: 'Permissions', href: route('permissions.index') },
+                {
+                    title: permission.display_name,
+                    href: route('permissions.show', permission.id),
+                },
+            ]}
+        >
+            <Head title={`Permission: ${permission.display_name}`} />
+            <div className="space-y-6 p-6">
+                <header>
+                    <Button asChild variant="ghost" size="sm">
+                        <Link href={route('permissions.index')}>
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to permissions
+                        </Link>
+                    </Button>
+                    <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                                <Key className="h-6 w-6" />
+                                {permission.display_name}
+                            </h1>
+                            <p className="mt-1 font-mono text-sm text-muted-foreground">
+                                {permission.name}
+                            </p>
+                            {permission.description && (
+                                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                                    {permission.description}
+                                </p>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button asChild variant="outline" size="sm">
+                                <Link
+                                    href={route(
+                                        'permissions.edit',
+                                        permission.id,
+                                    )}
+                                >
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit
+                                </Link>
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                disabled={deleting}
+                                onClick={handleDelete}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </Button>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                    <section className="rounded-lg border bg-card p-6">
+                        <h2 className="text-lg font-semibold">Details</h2>
+                        <dl className="mt-4 space-y-3 text-sm">
+                            <div>
+                                <dt className="text-muted-foreground">Group</dt>
+                                <dd className="mt-1">
+                                    <Badge variant="secondary">
+                                        {permission.group}
+                                    </Badge>
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="text-muted-foreground">
+                                    Status
+                                </dt>
+                                <dd className="mt-1">
+                                    <span
+                                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                            permission.is_active
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+                                        }`}
+                                    >
+                                        {permission.is_active
+                                            ? 'Active'
+                                            : 'Inactive'}
+                                    </span>
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    <section className="rounded-lg border bg-card p-6">
+                        <h2 className="text-lg font-semibold">
+                            Roles with this permission ({roles.length})
+                        </h2>
+                        {roles.length === 0 ? (
+                            <p className="mt-4 text-sm text-muted-foreground">
+                                No roles currently have this permission.
+                            </p>
+                        ) : (
+                            <Table className="mt-4">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead>Display name</TableHead>
+                                        <TableHead className="w-32 text-right">
+                                            Action
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {roles.map((role) => (
+                                        <TableRow key={role.id}>
+                                            <TableCell className="font-mono text-xs">
+                                                {role.name}
+                                            </TableCell>
+                                            <TableCell>
+                                                {role.display_name}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button asChild size="sm" variant="ghost">
+                                                    <Link
+                                                        href={route(
+                                                            'roles.show',
+                                                            role.id,
+                                                        )}
+                                                    >
+                                                        View
+                                                    </Link>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </section>
                 </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Description
-                  </h3>
-                  <p className="mt-1">
-                    {permission.description || 'No description provided'}
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Timestamps
-                  </h3>
-                  <p className="mt-1">
-                    <strong>Created:</strong> {permission.created_at ? new Date(permission.created_at).toLocaleDateString() : 'N/A'}
-                  </p>
-                  <p className="mt-1">
-                    <strong>Updated:</strong> {permission.updated_at ? new Date(permission.updated_at).toLocaleDateString() : 'N/A'}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Roles with this permission */}
-          {permission.roles && permission.roles.length > 0 && (
-            <Card>
-              <CardHeader className="pb-4">
-                <h2 className="text-lg font-semibold">
-                  Roles ({permission.roles.length})
-                </h2>
-              </CardHeader>
-              <CardContent>
-                {permission.roles.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Role Name</TableHead>
-                        <TableHead>Display Name</TableHead>
-                        <TableHead>Description</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {permission.roles.map((role: any) => (
-                        <TableRow key={role.id}>
-                          <TableCell>{role.name}</TableCell>
-                          <TableCell>{role.display_name}</TableCell>
-                          <TableCell>{role.description || '-'}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-center py-4 text-muted-foreground">
-                    No roles assigned to this permission.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    </>
-  );
+            </div>
+        </AppLayout>
+    );
 }
