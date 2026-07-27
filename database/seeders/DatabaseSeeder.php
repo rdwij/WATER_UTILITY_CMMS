@@ -12,14 +12,27 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Order matters: permission_role and role_user both pivot to rows
+     * inserted by their respective parents, so the parents must run
+     * first.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            PermissionSeeder::class,    // 1. Catalog
+            RoleSeeder::class,          // 2. Roles
+            PermissionRoleSeeder::class,// 3. Role ↔ Permission pivot
+            RoleUserSeeder::class,      // 4. User ↔ Role pivot (creates fixture users too)
         ]);
+
+        // Keep the legacy smoke-test user around so existing test
+        // suites that expect `test@example.com` keep working.
+        if (! User::query()->where('email', 'test@example.com')->exists()) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
     }
 }

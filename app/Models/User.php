@@ -43,7 +43,6 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'email_notifications',
     'sms_notifications',
     'phone_number',
-    'role',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
@@ -65,7 +64,6 @@ class User extends Authenticatable
             'dashboard_notifications' => 'boolean',
             'email_notifications' => 'boolean',
             'sms_notifications' => 'boolean',
-            'role' => 'string',
         ];
     }
 
@@ -129,6 +127,28 @@ class User extends Authenticatable
         return $this->roles()->whereHas('permissions', function($q) use ($permissions) {
             $q->whereIn('name', $permissions);
         })->count() === count($permissions);
+    }
+
+    /**
+     * Get all permissions granted to the user through their roles.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Permission>
+     */
+    public function getAllPermissions()
+    {
+        return Permission::query()
+            ->whereHas('roles', function ($q) {
+                $q->whereIn('roles.id', $this->roles()->select('roles.id'));
+            })
+            ->get();
+    }
+
+    /**
+     * Get the employee associated with the user.
+     */
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
     }
 
     /**

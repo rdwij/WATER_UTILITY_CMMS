@@ -33,17 +33,20 @@ export function UserMenuContent({ user }: Props) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuItem asChild>
-                    <Link
-                        className="block w-full cursor-pointer"
-                        href={ProfileController.edit()}
-                        prefetch
-                        onClick={cleanup}
-                    >
-                        <Settings className="mr-2" />
-                        Settings
-                    </Link>
-                </DropdownMenuItem>
+                {/* Only show Settings if user has permission */}
+                {(user?.permissions?.includes('settings.view') || user?.permissions?.includes('settings.update')) && (
+                    <DropdownMenuItem asChild>
+                        <Link
+                            className="block w-full cursor-pointer"
+                            href={ProfileController.edit()}
+                            prefetch
+                            onClick={cleanup}
+                        >
+                            <Settings className="mr-2" />
+                            Settings
+                        </Link>
+                    </DropdownMenuItem>
+                )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
