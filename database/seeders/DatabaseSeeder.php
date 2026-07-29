@@ -20,10 +20,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            PermissionSeeder::class,    // 1. Catalog
-            RoleSeeder::class,          // 2. Roles
-            PermissionRoleSeeder::class,// 3. Role ↔ Permission pivot
-            RoleUserSeeder::class,      // 4. User ↔ Role pivot (creates fixture users too)
+            PermissionSeeder::class,       // 1. Catalog (93 permissions)
+            RoleSeeder::class,             // 2. Roles (14)
+            PermissionRoleSeeder::class,   // 3. Role ↔ Permission pivot
+            DepartmentSeeder::class,       // 4. Departments reference data
+            RoleUserSeeder::class,         // 5. User ↔ Role pivot (creates fixture users too)
         ]);
 
         // Keep the legacy smoke-test user around so existing test

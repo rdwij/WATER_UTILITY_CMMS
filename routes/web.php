@@ -51,6 +51,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{permission}', [\App\Http\Controllers\PermissionController::class, 'update'])->name('update');
         Route::delete('{permission}', [\App\Http\Controllers\PermissionController::class, 'destroy'])->name('destroy');
     });
+
+    // Department management routes (ISO 55000 §6.2 organizational context).
+    Route::prefix('departments')->name('departments.')->group(function () {
+        Route::get('', [\App\Http\Controllers\DepartmentController::class, 'index'])->name('index');
+        Route::get('create', [\App\Http\Controllers\DepartmentController::class, 'create'])->name('create');
+        Route::post('', [\App\Http\Controllers\DepartmentController::class, 'store'])->name('store');
+        Route::get('{department}', [\App\Http\Controllers\DepartmentController::class, 'show'])->name('show');
+        Route::get('{department}/edit', [\App\Http\Controllers\DepartmentController::class, 'edit'])->name('edit');
+        Route::put('{department}', [\App\Http\Controllers\DepartmentController::class, 'update'])->name('update');
+        Route::delete('{department}', [\App\Http\Controllers\DepartmentController::class, 'destroy'])->name('destroy');
+    });
+
+    // Combined RBAC admin view.
+    Route::get('rbac', [\App\Http\Controllers\RolePermissionController::class, 'index'])
+        ->name('rbac.index');
+
+    // FR-08 / FR-09 approval workflow route stubs. Full controllers land
+    // in Phase 7; until then the routes exist purely to exercise the
+    // `stage:*` middleware gate (ensure.approval.stage).
+    Route::post('asset-disposals/{disposal}/recommend', function () {
+        return response()->json(['status' => 'pending-controller']);
+    })->middleware('stage:recommended')->name('asset-disposals.recommend.stub');
+
+    Route::post('asset-disposals/{disposal}/approve', function () {
+        return response()->json(['status' => 'pending-controller']);
+    })->middleware('stage:approved')->name('asset-disposals.approve.stub');
 });
 
 require __DIR__.'/settings.php';

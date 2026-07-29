@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'stage' => \App\Http\Middleware\EnsureApprovalStage::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -38,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Employee::class, \App\Policies\EmployeePolicy::class);
         Gate::policy(Role::class, \App\Policies\RolePolicy::class);
         Gate::policy(Permission::class, \App\Policies\PermissionPolicy::class);
+        Gate::policy(\App\Models\Department::class, \App\Policies\DepartmentPolicy::class);
     }
 
     /**

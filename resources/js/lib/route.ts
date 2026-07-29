@@ -2,6 +2,7 @@ import * as employees from '@/routes/employees';
 import * as users from '@/routes/users';
 import * as roles from '@/routes/roles';
 import * as permissions from '@/routes/permissions';
+import * as departments from '@/routes/departments';
 import {
     dashboard,
     home,
@@ -19,11 +20,24 @@ import {
 // directly.
 type Action = (...args: unknown[]) => unknown;
 
+// Synthetic Wayfinder shape for the single-action `rbac` route. We
+// could write a full `resources/js/routes/rbac/index.ts` module, but the
+// route file would be identical to Wayfinder's generated output for a
+// one-line `Route::get(...)` — easier to inline it here.
+const rbacModule = {
+    index: Object.assign(
+        () => ({ url: '/rbac', method: 'get' }),
+        { definition: { url: '/rbac' } },
+    ),
+} as unknown as Record<string, Action>;
+
 const modules: Record<string, Record<string, Action>> = {
     employees: employees as unknown as Record<string, Action>,
     users: users as unknown as Record<string, Action>,
     roles: roles as unknown as Record<string, Action>,
     permissions: permissions as unknown as Record<string, Action>,
+    departments: departments as unknown as Record<string, Action>,
+    rbac: rbacModule,
 };
 
 // Root-level routes (dashboard, login, home, register, logout) are

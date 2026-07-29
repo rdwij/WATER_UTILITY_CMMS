@@ -73,4 +73,12 @@ class Employee extends Model
     {
         return $this->hasMany(Employee::class, 'supervisor_id');
     }
+
+    /**
+     * Get the department the employee belongs to.
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
 }

@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -26,12 +28,16 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property bool $sms_notifications
  * @property string|null $phone_number
  * @property string $password
+ * @property bool $is_active
+ * @property Carbon|null $last_login_at
+ * @property Carbon|null $deactivated_at
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 #[Fillable([
     'name',
@@ -43,12 +49,15 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
     'email_notifications',
     'sms_notifications',
     'phone_number',
+    'is_active',
+    'last_login_at',
+    'deactivated_at',
 ])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
@@ -64,6 +73,9 @@ class User extends Authenticatable
             'dashboard_notifications' => 'boolean',
             'email_notifications' => 'boolean',
             'sms_notifications' => 'boolean',
+            'is_active' => 'boolean',
+            'last_login_at' => 'datetime',
+            'deactivated_at' => 'datetime',
         ];
     }
 
@@ -104,7 +116,7 @@ class User extends Authenticatable
      */
     public function hasPermission(string $permission): bool
     {
-        return $this->roles()->whereHas('permissions', function($q) use ($permission) {
+        return $this->roles()->whereHas('permissions', function ($q) use ($permission) {
             $q->where('name', $permission);
         })->exists();
     }
@@ -114,7 +126,7 @@ class User extends Authenticatable
      */
     public function hasAnyPermission(array $permissions): bool
     {
-        return $this->roles()->whereHas('permissions', function($q) use ($permissions) {
+        return $this->roles()->whereHas('permissions', function ($q) use ($permissions) {
             $q->whereIn('name', $permissions);
         })->exists();
     }
@@ -124,7 +136,7 @@ class User extends Authenticatable
      */
     public function hasAllPermission(array $permissions): bool
     {
-        return $this->roles()->whereHas('permissions', function($q) use ($permissions) {
+        return $this->roles()->whereHas('permissions', function ($q) use ($permissions) {
             $q->whereIn('name', $permissions);
         })->count() === count($permissions);
     }
@@ -146,9 +158,17 @@ class User extends Authenticatable
     /**
      * Get the employee associated with the user.
      */
-    public function employee()
+    public function employee(): HasOne
     {
         return $this->hasOne(Employee::class);
+    }
+
+    /**
+     * Scope to active (non-deactivated) users.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
     }
 
     /**
